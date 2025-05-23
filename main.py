@@ -7,10 +7,10 @@ from services import steam_api, price_history, discount_predictor
 #when we run the backend FastAPI automatically creates front end page built using SwaggerUI to test our endpoints
 app = FastAPI()
 
-# CORS for React frontend on localhost
+# CORS for React frontend on Vercel
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"], # we allow an app running on this url to access our backend
+    allow_origins=["https://games_dashboard.vercel.app"],  # Replace with your Vercel domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
