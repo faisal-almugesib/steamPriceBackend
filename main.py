@@ -5,16 +5,32 @@ from services import steam_api, price_history, discount_predictor
 #Query used for declaring and validating query parameters.
 
 #when we run the backend FastAPI automatically creates front end page built using SwaggerUI to test our endpoints
-app = FastAPI()
+app = FastAPI(
+    title="Steam Price Tracker API",
+    description="API for tracking Steam game prices and predicting discounts",
+    version="1.0.0"
+)
 
 # CORS for React frontend on Vercel
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://games_dashboard.vercel.app"],  # Replace with your Vercel domain
+    allow_origins=["https://games-dashboard.vercel.app"],  # Replace with your Vercel domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to Steam Price Tracker API",
+        "endpoints": {
+            "/search": "Search for games",
+            "/price-history/{game_id}": "Get price history for a game",
+            "/predict-discount/{game_id}": "Predict next discount for a game",
+            "/game-details/{game_id}": "Get detailed information about a game"
+        }
+    }
 
 @app.get("/search")
 #query is the parameter with a hint that it is a string, then we called Query on it for validation the triple dots means that the parameter is required
