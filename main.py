@@ -10,7 +10,7 @@ app = FastAPI()
 # CORS for React frontend on localhost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], # we allow an app running on this url to access our backend
+    allow_origins=["http://localhost:5173"], # we allow an app running on this url to access our backend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,4 +32,15 @@ async def get_price_history(game_id: str):
 async def predict_discount(game_id: str):
     history_obj = await price_history.get_price_history(game_id)
     prediction = await discount_predictor.predict_next_discount(history_obj['history'])
-    return {"game_id": game_id, "prediction": prediction}
+    return prediction
+
+# @app.get("/game-name/{game_id}")
+# async def get_game_name(game_id: str):
+#     return {"game_name": await steam_api.get_game_name(game_id)}
+
+@app.get("/game-details/{game_id}")
+async def get_game_details_endpoint(game_id: str):
+    try:
+        return await steam_api.get_game_details(game_id)
+    except Exception as e:
+        return {"error": str(e)}
