@@ -5,6 +5,14 @@ from datetime import datetime
 STEAM_SEARCH_API = "https://store.steampowered.com/api/storesearch/"
 STEAM_APP_DETAILS_API = "https://store.steampowered.com/api/appdetails"
 
+async def check_image_exists(url: str) -> bool:
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.head(url)
+            return response.status_code == 200
+    except:
+        return False
+
 async def search_games(query: str):
     params = {
         "term": query,
@@ -18,11 +26,16 @@ async def search_games(query: str):
     results = []
     for item in data.get("items", []):
         app_id = item.get("id")
+        image_url = f"https://cdn.akamai.steamstatic.com/steam/apps/{app_id}/header.jpg"
+        
+        # Check if image exists
+        image = image_url if await check_image_exists(image_url) else None
+        
         results.append({
             "id": app_id,
             "name": item.get("name"),
             "tiny_image": item.get("tiny_image"),
-            "image": f"https://cdn.akamai.steamstatic.com/steam/apps/{app_id}/header.jpg"
+            "image": image
         })
 
     return results
