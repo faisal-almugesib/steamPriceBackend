@@ -1,0 +1,40 @@
+# Steam Price Tracker — Backend
+
+FastAPI backend for [Games Price Dashboard](https://games-stats.vercel.app/) ([frontend repo](https://github.com/faisal-almugesib/steamPriceFrontend)). Searches Steam games, aggregates price history across stores, and predicts the next discount.
+
+## Architecture
+
+```
+React frontend (Vercel)
+        │
+        ▼
+FastAPI backend ──► Steam Store API        (search, game details)
+        │      ──► IsThereAnyDeal API      (historical lows, price history)
+        │      ──► Gemini 1.5 Flash        (discount prediction from price stats)
+```
+
+- **`main.py`** — API surface: `/search`, `/price-history/{game_id}`, `/predict-discount/{game_id}`, `/game-details/{game_id}`
+- **`services/steam_api.py`** — async Steam Store search + app details (httpx)
+- **`services/price_history.py`** — Steam App ID → ITAD lookup → store-low history, normalized for charting
+- **`services/discount_predictor.py`** — computes price statistics (current/low/high/average, store coverage) and prompts Gemini for a structured discount prediction with confidence
+- **`models/schemas.py`** — Pydantic response models
+- **`scripts/`** — standalone API exploration scripts
+
+## Run Locally
+
+```bash
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# .env
+# ITAD_API_KEY=...      (https://isthereanydeal.com/dev/app/)
+# GEMINI_API_KEY=...    (https://aistudio.google.com/)
+
+uvicorn main:app --reload   # Swagger UI at http://127.0.0.1:8000/docs
+```
+
+`/search` and `/game-details` work without any API keys; price history needs `ITAD_API_KEY`, prediction needs `GEMINI_API_KEY`.
+
+## Deployment
+
+The frontend is live on Vercel: **[games-stats.vercel.app](https://games-stats.vercel.app/)**. The backend was previously hosted on Railway (free tier expired) — deploy `uvicorn main:app --host 0.0.0.0 --port $PORT` on any Python host (Procfile included) and point the frontend's `VITE_BACKEND_URL` at it.

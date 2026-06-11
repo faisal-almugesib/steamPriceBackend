@@ -2,9 +2,6 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from services import steam_api, price_history, discount_predictor
 
-#Query used for declaring and validating query parameters.
-
-#when we run the backend FastAPI automatically creates front end page built using SwaggerUI to test our endpoints
 app = FastAPI(
     title="Steam Price Tracker API",
     description="API for tracking Steam game prices and predicting discounts",
@@ -33,13 +30,10 @@ async def root():
     }
 
 @app.get("/search")
-#query is the parameter with a hint that it is a string, then we called Query on it for validation the triple dots means that the parameter is required
-#we are calling another async code that's why we need async with await
 async def search_games(query: str = Query(...)):
     return await steam_api.search_games(query)
 
 @app.get("/price-history/{game_id}") 
-#here the game_id is a path variable no need for validation using Query since we will get the game ID when the user clicks on it
 async def get_price_history(game_id: str):
     return await price_history.get_price_history(game_id)
 
