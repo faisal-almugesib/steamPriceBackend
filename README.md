@@ -35,6 +35,10 @@ uvicorn main:app --reload   # Swagger UI at http://127.0.0.1:8000/docs
 
 `/search` and `/game-details` work without any API keys; price history needs `ITAD_API_KEY`, prediction needs `GEMINI_API_KEY`.
 
+## Fallback behavior (no keys required)
+
+The API is fully usable without keys: if `ITAD_API_KEY` is missing or the ITAD call fails, `/price-history` returns **deterministic sample price data** (real game title still fetched from Steam); if `GEMINI_API_KEY` is missing or the Gemini call fails, `/predict-discount` returns a **statistical estimate** computed from the price history. Fallback responses carry `"fallback": true` and a `"note"` string, which the frontend renders as small grey text so sample data is never mistaken for live data.
+
 ## Deployment
 
 The frontend is live on Vercel: **[games-stats.vercel.app](https://games-stats.vercel.app/)**. The backend was previously hosted on Railway (free tier expired) — deploy `uvicorn main:app --host 0.0.0.0 --port $PORT` on any Python host (Procfile included) and point the frontend's `VITE_BACKEND_URL` at it.

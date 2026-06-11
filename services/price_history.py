@@ -1,4 +1,5 @@
 import httpx
+import random
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
@@ -8,8 +9,58 @@ load_dotenv()
 
 ITAD_API_KEY = os.getenv("ITAD_API_KEY")
 
+SAMPLE_NOTE = "Sample data \u2014 live price API unavailable"
+
+
+async def _steam_title(game_id: str) -> str:
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://store.steampowered.com/api/appdetails",
+                params={"appids": game_id, "cc": "US"},
+            )
+            entry = resp.json().get(str(game_id), {})
+            if entry.get("success"):
+                return entry["data"].get("name", f"Game {game_id}")
+    except Exception:
+        pass
+    return f"Game {game_id}"
+
+
+def _sample_history(game_id: str):
+    # Deterministic per game so refreshes look stable
+    rng = random.Random(int(game_id) if str(game_id).isdigit() else hash(game_id))
+    base = rng.choice([59.99, 49.99, 39.99, 29.99])
+    today = datetime.now()
+    history = []
+    lowest = {"price": float("inf"), "store": "Steam", "date": None}
+    for i in range(17, -1, -1):
+        month = (today - timedelta(days=30 * i)).strftime("%Y-%m")
+        if i % 6 in (1, 2):
+            price = round(base * rng.choice([0.5, 0.6, 0.67, 0.75]), 2)
+        else:
+            price = base
+        history.append({"date": month, "price": price, "store": "Steam"})
+        if price < lowest["price"]:
+            lowest = {"price": price, "store": "Steam", "date": month}
+    return history, lowest
+
+
+async def _fallback_response(game_id: str):
+    history, lowest = _sample_history(game_id)
+    return {
+        "title": await _steam_title(game_id),
+        "history": history,
+        "lowest_price": lowest,
+        "fallback": True,
+        "note": SAMPLE_NOTE,
+    }
+
 async def get_price_history(game_id: str):
     print(f"Fetching price history for game ID: {game_id}")
+    if not ITAD_API_KEY:
+        print("ITAD_API_KEY not set - returning sample price history")
+        return await _fallback_response(game_id)
     try:
         async with httpx.AsyncClient() as client:
             # Step 1: Lookup ITAD game ID from Steam App ID
@@ -20,7 +71,7 @@ async def get_price_history(game_id: str):
             lookup_data = lookup_resp.json()
             
             if "game" not in lookup_data:
-                return {"title": game_id, "history": [], "lowest_price": None, "error": "Game not found."}
+                return await _fallback_response(game_id)
 
             itad_game_id = lookup_data["game"]["id"]
 
@@ -36,7 +87,7 @@ async def get_price_history(game_id: str):
             # Step 3: Find entry with matching game_id
             matched_game = next((entry for entry in storelow_data if entry["id"] == itad_game_id), None)  #it stops as soon as it finds a match
             if not matched_game or "lows" not in matched_game:
-                return {"title": game_id, "history": [], "lowest_price": None, "error": "Price history not available."}
+                return await _fallback_response(game_id)
 
             print("Matched game data:", matched_game)
             print("Number of price points:", len(matched_game["lows"]))
@@ -86,4 +137,5 @@ async def get_price_history(game_id: str):
             }
 
     except Exception as e:
-        return {"title": game_id, "history": [], "lowest_price": None, "error": str(e)}
+        print(f"Price history API failed ({e}) - returning sample data")
+        return await _fallback_response(game_id)

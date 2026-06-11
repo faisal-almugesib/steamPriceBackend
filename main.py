@@ -12,6 +12,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://games-stats.vercel.app", "http://localhost:5173"],
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,6 +43,9 @@ async def get_price_history(game_id: str):
 async def predict_discount(game_id: str):
     history_obj = await price_history.get_price_history(game_id)
     prediction = await discount_predictor.predict_next_discount(history_obj['history'])
+    if history_obj.get('fallback'):
+        prediction['fallback'] = True
+        prediction.setdefault('note', price_history.SAMPLE_NOTE)
     return prediction
 
 # @app.get("/game-name/{game_id}")
