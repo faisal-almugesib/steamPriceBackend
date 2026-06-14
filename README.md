@@ -41,8 +41,9 @@ The API is fully usable without keys: if `ITAD_API_KEY` is missing or the ITAD c
 
 ## Deployment
 
-The frontend is live on Vercel: **[games-stats.vercel.app](https://games-stats.vercel.app/)**.
+- **Live API:** [steam-price-backend.vercel.app](https://steam-price-backend.vercel.app/) (try [`/search?query=elden ring`](https://steam-price-backend.vercel.app/search?query=elden%20ring))
+- **Live frontend:** [games-stats.vercel.app](https://games-stats.vercel.app/)
 
-The backend runs as a **Vercel serverless function** (free Hobby plan) — `vercel.json` is included, so importing this repo at [vercel.com/new](https://vercel.com/new) deploys it with no extra configuration. Point the frontend's `VITE_BACKEND_URL` environment variable at the resulting URL. API keys (`ITAD_API_KEY`, `GEMINI_API_KEY`) are optional — without them the API serves the sample-data fallback described above.
+The backend runs as a **Vercel serverless function** (free Hobby plan) — `vercel.json` is included, so importing this repo at [vercel.com/new](https://vercel.com/new) deploys it with no extra configuration. The frontend's `VITE_BACKEND_URL` environment variable points at this URL. API keys (`ITAD_API_KEY`, `GEMINI_API_KEY`) are optional — without them the API serves the sample-data fallback described above.
 
 It also runs on any regular Python host: `uvicorn main:app --host 0.0.0.0 --port $PORT` (Procfile included).
